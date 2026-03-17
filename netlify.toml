@@ -1,0 +1,22 @@
+# Agendio SaaS — Roteamento Netlify
+# Ordem importa: mais específico primeiro
+
+# Painel admin
+[[redirects]]
+  from = "/admin"
+  to = "/admin/index.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/index.html"
+  status = 200
+  force = true
+
+# Página pública de agendamento por slug
+[[redirects]]
+  from = "/:slug"
+  to = "/public/index.html"
+  status = 200
+  force = true

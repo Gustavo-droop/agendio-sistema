@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agendio — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --ink:#0d0d0d;--cream:#f5f0e8;--rust:#c8440a;--gold:#d4a843;
+  --smoke:#2a2a2a;--mid:#555;--green:#2d7a4f;--red:#b03030;--orange:#c87010;--wa:#25d366;
+  --accent:#c8440a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--ink);color:var(--cream);min-height:100vh;}
+header{background:var(--smoke);border-bottom:3px solid var(--accent);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:var(--gold);}
+.logo small{font-size:10px;letter-spacing:1px;display:block;color:var(--mid);font-family:'DM Sans',sans-serif;margin-top:-3px;}
+.screen{display:none;padding:20px 18px;max-width:480px;margin:0 auto;}
+.screen.active{display:block;}
+h2{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;margin-bottom:6px;}
+h3{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1px;margin-bottom:12px;}
+.subtitle{color:var(--mid);font-size:13px;margin-bottom:20px;}
+.booking-form{display:flex;flex-direction:column;gap:12px;}
+.field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--mid);margin-bottom:5px;}
+.field input,.field select{width:100%;background:var(--smoke);border:2px solid #3a3a3a;border-radius:8px;color:var(--cream);padding:12px 13px;font-family:'DM Sans',sans-serif;font-size:15px;transition:border .2s;appearance:none;}
+.field input:focus,.field select:focus{outline:none;border-color:var(--gold);}
+.field select option{background:#222;}
+.btn{width:100%;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;border:none;border-radius:8px;cursor:pointer;transition:all .2s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{filter:brightness(1.15);transform:translateY(-1px);}
+.btn-secondary{background:var(--smoke);color:var(--cream);border:2px solid #3a3a3a;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-wa{background:var(--wa);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.btn-sm{padding:7px 13px;font-size:13px;letter-spacing:1px;width:auto;border:none;border-radius:6px;cursor:pointer;transition:all .2s;font-family:'Bebas Neue',sans-serif;}
+
+/* ESTADOS */
+.state-screen{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:24px;}
+.state-screen.active{display:flex;}
+
+/* LOGIN */
+.login-box{background:var(--smoke);border-radius:14px;padding:30px 24px;width:100%;max-width:400px;border:1px solid #3a3a3a;}
+.pw-strength{height:4px;border-radius:2px;margin-top:6px;background:#3a3a3a;overflow:hidden;}
+.pw-strength-bar{height:100%;border-radius:2px;transition:all .3s;width:0;}
+.login-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #3a3a3a;}
+.login-tab{flex:1;padding:9px;background:none;border:none;color:var(--mid);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;}
+.login-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+/* ASSINATURA VENCIDA */
+.expired-box{background:#1a0a0a;border:2px solid var(--red);border-radius:12px;padding:22px;text-align:center;max-width:380px;}
+.expired-box h3{color:var(--red);font-size:22px;margin-bottom:8px;}
+
+/* ADMIN NAV */
+.admin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;}
+.logout-btn{background:none;border:1px solid var(--mid);color:var(--mid);padding:5px 10px;border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;}
+.logout-btn:hover{color:var(--red);border-color:var(--red);}
+.admin-nav{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #2a2a2a;overflow-x:auto;scrollbar-width:none;}
+.admin-nav::-webkit-scrollbar{display:none;}
+.admin-nav-btn{flex-shrink:0;padding:8px 11px;background:none;border:none;color:var(--mid);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;}
+.admin-nav-btn.active{color:var(--gold);border-bottom-color:var(--gold);}
+.admin-nav-btn:hover{color:var(--cream);}
+
+/* LOCK BOX */
+.lock-box{background:var(--smoke);border-radius:10px;padding:17px;margin-bottom:13px;border:2px solid var(--red);}
+.lock-box.unlocked{border-color:#3a3a3a;}
+.lock-box h3{color:var(--red);margin-bottom:7px;}
+.lock-box.unlocked h3{color:var(--cream);}
+.lock-box p{font-size:12px;color:var(--mid);margin-bottom:11px;line-height:1.5;}
+.lock-status{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-bottom:11px;}
+.lock-dot{width:9px;height:9px;border-radius:50%;background:var(--green);}
+.lock-dot.red{background:var(--red);animation:blink .8s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* AGENDA */
+.day-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;scrollbar-width:none;}
+.day-tabs::-webkit-scrollbar{display:none;}
+.day-tab{flex-shrink:0;padding:6px 13px;background:var(--smoke);border:2px solid transparent;border-radius:6px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--mid);transition:all .2s;}
+.day-tab.active{border-color:var(--gold);color:var(--gold);}
+.appointment-card{background:var(--smoke);border-radius:10px;padding:13px;margin-bottom:8px;border-left:4px solid var(--accent);transition:all .2s;}
+.appointment-card.arrived{border-color:var(--green);opacity:.7;}
+.appointment-card.cancelled-card{border-color:var(--mid);opacity:.5;}
+.appointment-card .time-badge{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);letter-spacing:1px;}
+.appointment-card .client-name{font-weight:600;font-size:14px;margin-top:3px;}
+.appointment-card .client-phone{font-size:12px;color:var(--mid);margin-top:1px;}
+.appointment-card .card-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:6px;}
+.arrived-btn{background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 13px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;}
+.arrived-badge{background:#1a3a28;color:var(--green);border:1px solid var(--green);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;}
+.cancelled-badge{background:#1a1a1a;color:var(--mid);border:1px solid #3a3a3a;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;}
+.countdown-badge{font-size:11px;color:var(--rust);font-weight:600;background:#3a1010;padding:4px 8px;border-radius:10px;animation:blink .8s ease-in-out infinite;}
+.empty-state{text-align:center;padding:32px 0;color:var(--mid);}
+.empty-state .icon{font-size:34px;margin-bottom:9px;}
+.wa-btn-sm{background:var(--wa);color:#fff;border:none;border-radius:6px;padding:5px 11px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;}
+
+/* SETTINGS */
+.settings-section{background:var(--smoke);border-radius:10px;padding:17px;margin-bottom:12px;}
+.settings-section h3{color:var(--gold);margin-bottom:13px;}
+.week-days-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:7px;}
+.day-toggle{padding:8px 3px;border:2px solid #3a3a3a;border-radius:7px;text-align:center;cursor:pointer;font-size:11px;font-weight:600;background:var(--smoke);color:var(--mid);transition:all .2s;user-select:none;}
+.day-toggle.on{border-color:var(--green);color:var(--green);background:#0d2a1a;}
+.time-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.interval-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px;}
+.off-dates-list{margin-bottom:10px;}
+.off-date-item{display:flex;justify-content:space-between;align-items:center;background:#1a1a1a;border-radius:6px;padding:8px 12px;margin-bottom:5px;font-size:12px;}
+.off-date-item .remove-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:17px;line-height:1;}
+.add-off-row{display:flex;gap:7px;}
+.add-off-row input{flex:1;background:var(--smoke);border:2px solid #3a3a3a;border-radius:8px;color:var(--cream);padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:13px;}
+.add-off-row input:focus{outline:none;border-color:var(--gold);}
+.reminder-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #2a2a2a;font-size:13px;}
+.reminder-item:last-child{border:none;}
+.reminder-item span{color:var(--mid);font-size:12px;}
+.toggle-switch{position:relative;width:36px;height:20px;cursor:pointer;flex-shrink:0;}
+.toggle-switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;inset:0;background:#3a3a3a;border-radius:10px;transition:.3s;}
+.slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;}
+input:checked+.slider{background:var(--green);}
+input:checked+.slider:before{transform:translateX(16px);}
+.divider{border:none;border-top:1px solid #2a2a2a;margin:13px 0;}
+.pw-section{background:var(--smoke);border-radius:10px;padding:17px;margin-bottom:12px;border:1px solid #3a2a0a;}
+.pw-section h3{color:var(--gold);margin-bottom:6px;}
+.pw-section p{font-size:12px;color:var(--mid);margin-bottom:13px;line-height:1.5;}
+
+/* INFO ASSINATURA */
+.sub-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:10px;}
+.sub-badge.ativo{background:#0d2a1a;border:1px solid var(--green);color:var(--green);}
+.sub-badge.vencido{background:#2a0a0a;border:1px solid var(--red);color:var(--red);}
+
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--green);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;transition:transform .3s;z-index:1000;white-space:nowrap;max-width:92vw;text-align:center;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+#toast.warn{background:var(--rust);}
+@media(max-width:360px){.week-days-grid{grid-template-columns:repeat(3,1fr);}}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- CARREGANDO -->
+<div id="state-loading" class="state-screen active">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold);">Agendio</div>
+  <div style="font-size:13px;color:var(--mid);">Carregando...</div>
+</div>
+
+<!-- LOGIN / CADASTRO -->
+<div id="state-login" class="state-screen">
+  <div class="login-box">
+
+    <!-- LOGO -->
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:5px;color:var(--gold);line-height:1;">Agendio</div>
+      <div style="font-size:11px;color:var(--mid);letter-spacing:2px;margin-top:2px;">SISTEMA DE AGENDAMENTO</div>
+    </div>
+
+    <!-- MODO: LOGIN (padrão) -->
+    <div id="login-form">
+      <div style="margin-bottom:20px;">
+        <h3 style="font-size:20px;margin-bottom:4px;">Bem-vindo de volta 👋</h3>
+        <p style="font-size:13px;color:var(--mid);">Entre com sua conta para acessar o painel.</p>
+      </div>
+      <div class="booking-form">
+        <div class="field">
+          <label>E-mail</label>
+          <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="field">
+          <label>Senha</label>
+          <input type="password" id="login-pw" placeholder="Sua senha" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary" onclick="doLogin()" id="btn-login">Entrar</button>
+        <button onclick="showForgotPassword()" style="background:none;border:none;color:var(--mid);font-size:12px;cursor:pointer;text-align:center;width:100%;padding:4px;">
+          Esqueceu sua senha?
+        </button>
+      </div>
+      <div style="border-top:1px solid #3a3a3a;margin-top:20px;padding-top:16px;text-align:center;">
+        <span style="font-size:13px;color:var(--mid);">Não tem conta ainda? </span>
+        <button onclick="switchLoginTab('register')" style="background:none;border:none;color:var(--gold);font-size:13px;cursor:pointer;font-weight:600;">Cadastrar-se</button>
+      </div>
+    </div>
+
+    <!-- MODO: CADASTRO -->
+    <div id="register-form" style="display:none;">
+      <div style="margin-bottom:20px;">
+        <h3 style="font-size:20px;margin-bottom:4px;">Agora é oficial 🎉</h3>
+        <p style="font-size:13px;color:var(--mid);">Agora é oficial — sua agenda está pronta para crescer.</p>
+      </div>
+      <div class="booking-form">
+        <div class="field">
+          <label>E-mail</label>
+          <input type="email" id="reg-email" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="field">
+          <label>Senha</label>
+          <input type="password" id="reg-pw" placeholder="Mínimo 6 caracteres" oninput="checkPwStrength('reg-pw','reg-pw-bar')" autocomplete="new-password">
+          <div class="pw-strength"><div class="pw-strength-bar" id="reg-pw-bar"></div></div>
+        </div>
+        <button class="btn btn-primary" onclick="doRegister()">Criar conta</button>
+      </div>
+      <div style="border-top:1px solid #3a3a3a;margin-top:20px;padding-top:16px;text-align:center;">
+        <span style="font-size:13px;color:var(--mid);">Já tem conta? </span>
+        <button onclick="switchLoginTab('login')" style="background:none;border:none;color:var(--gold);font-size:13px;cursor:pointer;font-weight:600;">Entrar</button>
+      </div>
+    </div>
+
+    <!-- MODO: ESQUECI SENHA -->
+    <div id="forgot-form" style="display:none;">
+      <div style="margin-bottom:20px;">
+        <h3 style="font-size:20px;margin-bottom:4px;">Redefinir senha 🔑</h3>
+        <p style="font-size:13px;color:var(--mid);">Informe seu e-mail e enviaremos um link para redefinir.</p>
+      </div>
+      <div class="booking-form">
+        <div class="field">
+          <label>E-mail</label>
+          <input type="email" id="forgot-email" placeholder="seu@email.com">
+        </div>
+        <button class="btn btn-primary" onclick="doForgotPassword()">Enviar link</button>
+        <button onclick="switchLoginTab('login')" style="background:none;border:none;color:var(--mid);font-size:12px;cursor:pointer;text-align:center;width:100%;padding:4px;">
+          ← Voltar para o login
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ASSINATURA VENCIDA -->
+<div id="state-expired" class="state-screen">
+  <div class="expired-box">
+    <div style="font-size:42px;margin-bottom:10px;">⏸️</div>
+    <h3>Assinatura Vencida</h3>
+    <p style="font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:16px;">
+      Sua assinatura do Agendio está vencida. Renove para voltar a acessar o painel e receber agendamentos.
+    </p>
+    <a href="https://pay.kiwify.com.br/oRpQmq7" target="_blank" class="btn btn-primary" style="display:block;text-decoration:none;text-align:center;">
+      Renovar Assinatura
+    </a>
+    <button onclick="doLogout()" style="background:none;border:none;color:var(--mid);font-size:12px;cursor:pointer;margin-top:12px;width:100%;">Sair</button>
+  </div>
+</div>
+
+<!-- SETUP DO NEGÓCIO (primeiro acesso após criar conta) -->
+<div id="state-setup" class="state-screen" style="align-items:flex-start;padding-top:40px;">
+  <div style="width:100%;max-width:420px;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--gold);">Bem-vindo ao Agendio!</div>
+      <div style="font-size:13px;color:var(--mid);">Configure seu negócio para começar</div>
+    </div>
+    <div class="settings-section">
+      <h3>🏪 Seu Negócio</h3>
+      <div class="booking-form">
+        <div class="field">
+          <label>Tipo de negócio</label>
+          <select id="setup-biz-type">
+            <option value="barbearia">💈 Barbearia</option>
+            <option value="salao">💇 Salão de Beleza</option>
+            <option value="clinica">🏥 Clínica / Saúde</option>
+            <option value="tatuagem">🎨 Estúdio de Tattoo</option>
+            <option value="manicure">💅 Manicure / Nail</option>
+            <option value="personal">💪 Personal Trainer</option>
+            <option value="estetica">✨ Estética</option>
+            <option value="outro">🏪 Outro</option>
+          </select>
+        </div>
+        <div class="field"><label>Nome do negócio</label><input type="text" id="setup-shop-name" placeholder="Ex: Studio da Ana" maxlength="50"></div>
+        <div class="field"><label>Seu nome (profissional)</label><input type="text" id="setup-barber-name" placeholder="Ex: Ana Lima" maxlength="40"></div>
+        <div class="field"><label>WhatsApp (com DDD, só números)</label><input type="tel" id="setup-wa" placeholder="11999999999" maxlength="15"></div>
+        <div class="field">
+          <label>Slug (URL do seu negócio)</label>
+          <input type="text" id="setup-slug" placeholder="Ex: studio-da-ana" maxlength="40" oninput="formatSlug(this)">
+          <div style="font-size:11px;color:var(--mid);margin-top:4px;">agendio.com/<span id="slug-preview" style="color:var(--gold);">...</span></div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="finishSetup()">Criar meu sistema ✓</button>
+    <div style="height:30px;"></div>
+  </div>
+</div>
+
+<!-- PAINEL ADMIN PRINCIPAL -->
+<div id="main-admin" style="display:none;">
+  <header>
+    <div class="logo">
+      <span id="admin-shop-name">Admin</span>
+      <small>Painel Admin</small>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Sair</button>
+  </header>
+
+  <div style="max-width:480px;margin:0 auto;padding:16px 18px 0;">
+    <!-- Badge de assinatura -->
+    <div id="sub-info" style="margin-bottom:4px;"></div>
+    <!-- Link público -->
+    <div id="public-link-bar" style="background:var(--smoke);border-radius:8px;padding:9px 13px;font-size:12px;color:var(--mid);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+      <span>🔗 Seu link: <span id="pub-link-text" style="color:var(--gold);"></span></span>
+      <button onclick="copyPublicLink()" style="background:none;border:1px solid var(--mid);color:var(--mid);padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;">Copiar</button>
+    </div>
+  </div>
+
+  <div style="max-width:480px;margin:0 auto;padding:0 18px;">
+    <div class="admin-nav">
+      <button class="admin-nav-btn active" onclick="switchTab('agenda',this)">📋 Agenda</button>
+      <button class="admin-nav-btn" onclick="switchTab('lock',this)">🔒 Bloqueio</button>
+      <button class="admin-nav-btn" onclick="switchTab('reminder',this)">📲 WA</button>
+      <button class="admin-nav-btn" onclick="switchTab('settings',this)">⚙️ Config</button>
+    </div>
+
+    <!-- ABA: AGENDA -->
+    <div id="tab-agenda">
+      <div class="day-tabs" id="admin-day-tabs"></div>
+      <div id="admin-appointments"></div>
+    </div>
+
+    <!-- ABA: BLOQUEIO -->
+    <div id="tab-lock" style="display:none;">
+      <div id="lock-box-container"></div>
+      <div style="background:var(--smoke);border-radius:10px;padding:14px;font-size:12px;color:var(--mid);line-height:1.6;">
+        ⚠️ O bloqueio de emergência impede novos agendamentos para hoje. Agendamentos existentes não são cancelados.
+      </div>
+    </div>
+
+    <!-- ABA: WHATSAPP -->
+    <div id="tab-reminder" style="display:none;">
+      <div class="settings-section">
+        <h3>📲 Lembretes via WhatsApp</h3>
+        <p style="font-size:12px;color:var(--mid);margin-bottom:13px;line-height:1.5;">Configure quando os clientes recebem lembretes automáticos.</p>
+        <div class="reminder-item">
+          <div><strong style="font-size:13px;">Lembrete 1h antes</strong><br><span>Link de confirmação 1 hora antes</span></div>
+          <label class="toggle-switch"><input type="checkbox" id="rem-1h" checked><span class="slider"></span></label>
+        </div>
+        <div class="reminder-item">
+          <div><strong style="font-size:13px;">Lembrete no dia de manhã</strong><br><span>Às 8h do dia do agendamento</span></div>
+          <label class="toggle-switch"><input type="checkbox" id="rem-morning"><span class="slider"></span></label>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>Número do WhatsApp</h3>
+        <div class="field"><label>Número (com DDD, só números)</label><input type="tel" id="wa-number" placeholder="11999999999" maxlength="15"></div>
+        <div style="margin-top:10px;"></div>
+        <button class="btn btn-primary" onclick="saveReminderSettings()" style="font-size:15px;padding:11px;">Salvar</button>
+      </div>
+      <div style="background:var(--smoke);border-radius:10px;padding:13px;font-size:12px;color:var(--mid);line-height:1.6;">
+        💡 Nos cards da agenda, clique no botão do WhatsApp para enviar um lembrete manualmente ao cliente.
+      </div>
+    </div>
+
+    <!-- ABA: CONFIG -->
+    <div id="tab-settings" style="display:none;">
+      <div class="settings-section">
+        <h3 id="settings-biz-icon">🏪 Seu Negócio</h3>
+        <div class="booking-form">
+          <div class="field">
+            <label>Tipo de negócio</label>
+            <select id="biz-type-select"></select>
+          </div>
+          <div class="field"><label>Nome do negócio</label><input type="text" id="shop-name" maxlength="50"></div>
+          <div class="field"><label>Profissional</label><input type="text" id="barber-name" maxlength="40"></div>
+          <div class="field"><label>Endereço (opcional)</label><input type="text" id="shop-address" maxlength="80"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>📅 Dias de Trabalho</h3>
+        <div class="week-days-grid" id="work-days-grid"></div>
+        <p style="font-size:11px;color:var(--mid);margin-top:5px;">Toque para ativar/desativar</p>
+      </div>
+      <div class="settings-section">
+        <h3>🕐 Horário e Intervalos</h3>
+        <div class="time-row">
+          <div class="field"><label>Início</label><input type="time" id="work-start"></div>
+          <div class="field"><label>Fim</label><input type="time" id="work-end"></div>
+        </div>
+        <div class="interval-row">
+          <div class="field">
+            <label>Duração</label>
+            <select id="slot-interval">
+              <option value="15">15 min</option>
+              <option value="30">30 min</option>
+              <option value="45">45 min</option>
+              <option value="60">60 min</option>
+              <option value="90">90 min</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Pausa almoço</label>
+            <select id="lunch-break">
+              <option value="none">Sem pausa</option>
+              <option value="12:00-13:00">12h – 13h</option>
+              <option value="12:00-14:00">12h – 14h</option>
+              <option value="13:00-14:00">13h – 14h</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>🚫 Folgas e Feriados</h3>
+        <div class="off-dates-list" id="off-dates-list"></div>
+        <div class="add-off-row">
+          <input type="date" id="new-off-date">
+          <button class="btn-sm" style="background:var(--orange);color:#fff;" onclick="addOffDate()">+ Adicionar</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">Salvar Configurações</button>
+      <div style="height:16px;"></div>
+    </div>
+  </div>
+</div><!-- /main-admin -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  AGENDIO SaaS — Painel Admin (admin/index.html)
+//  Autenticação: Supabase Auth (email + senha)
+//  Multi-tenant: cada usuário tem um business_id isolado
+// ═══════════════════════════════════════════════════════════════
+
+// ── SUPABASE CONFIG ──────────────────────────────────────────────
+const SUPABASE_URL = 'https://bwswmfvklfykcqhrqjbf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3c3dtZnZrbGZ5a2NxaHJxamJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDEyMDYsImV4cCI6MjA4ODkxNzIwNn0._E6W8pViQp9xoqp9Yk4lM9KQ_pgSI-P2qvCiqKCj5WM';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── TIPOS DE NEGÓCIO ─────────────────────────────────────────────
+const BUSINESS_TYPES = [
+  {id:'barbearia', label:'Barbearia',       icon:'💈', color:'#c8440a', service:'corte'},
+  {id:'salao',     label:'Salão de Beleza',  icon:'💇', color:'#b0308a', service:'serviço'},
+  {id:'clinica',   label:'Clínica / Saúde',  icon:'🏥', color:'#2d7a4f', service:'consulta'},
+  {id:'tatuagem',  label:'Estúdio de Tattoo',icon:'🎨', color:'#4a30c8', service:'sessão'},
+  {id:'manicure',  label:'Manicure / Nail',  icon:'💅', color:'#c83070', service:'atendimento'},
+  {id:'personal',  label:'Personal Trainer', icon:'💪', color:'#c87010', service:'treino'},
+  {id:'estetica',  label:'Estética',         icon:'✨', color:'#708030', service:'procedimento'},
+  {id:'outro',     label:'Outro negócio',    icon:'🏪', color:'#555',    service:'atendimento'},
+];
+
+const DEFAULT_SETTINGS = {
+  shopName:'Meu Negócio', barberName:'Profissional', shopAddress:'',
+  bizType:'barbearia', workDays:[1,2,3,4,5,6],
+  startTime:'08:00', endTime:'18:00', intervalMin:30,
+  lunchBreak:'none', offDates:[], locked:false, lockedSince:null,
+  waNumber:'', rem1h:true, remMorning:false
+};
+
+const NO_SHOW_TIMEOUT = 10 * 60 * 1000;
+const DAYS_PT   = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+// ── ESTADO GLOBAL ────────────────────────────────────────────────
+let currentUser  = null;
+let businessId   = null;
+let businessData = null;  // row da tabela businesses
+let settings     = null;
+let dayCache     = {};
+let currentAdminDay = null;
+let toastTimer   = null;
+
+// ── LOGGER ───────────────────────────────────────────────────────
+async function log(type, message, data = {}) {
+  console[type === 'error' ? 'error' : 'info'](`[Admin ${type}]`, message, data);
+  try {
+    await db.from('logs').insert({ business_id: businessId, type, message, data: JSON.stringify(data) });
+  } catch(e) {}
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+async function init() {
+  // Verifica sessão ativa
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadBusiness();
+  } else {
+    setState('login');
+  }
+}
+
+// ── AUTENTICAÇÃO ─────────────────────────────────────────────────
+// Tradução de erros do Supabase para português
+function traduzirErro(msg) {
+  if (!msg) return 'Erro desconhecido. Tente novamente.';
+  if (msg.includes('Invalid login credentials'))  return 'E-mail ou senha incorretos.';
+  if (msg.includes('Email not confirmed'))         return 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.';
+  if (msg.includes('User already registered'))     return 'Este e-mail já está cadastrado. Faça login.';
+  if (msg.includes('Password should be'))          return 'A senha deve ter no mínimo 6 caracteres.';
+  if (msg.includes('rate limit'))                  return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+  if (msg.includes('network'))                     return 'Erro de conexão. Verifique sua internet.';
+  if (msg.includes('row-level security'))          return 'Erro de permissão. Entre em contato com o suporte.';
+  return 'Ocorreu um erro. Tente novamente.';
+}
+
+function switchLoginTab(tab) {
+  document.getElementById('login-form').style.display    = tab === 'login'    ? 'block' : 'none';
+  document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('forgot-form').style.display   = tab === 'forgot'   ? 'block' : 'none';
+}
+
+function showForgotPassword() {
+  switchLoginTab('forgot');
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw    = document.getElementById('login-pw').value;
+  if (!email || !pw) { showToast('Preencha e-mail e senha', true); return; }
+  const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
+  if (error) { showToast(traduzirErro(error.message), true); return; }
+  currentUser = data.user;
+  await loadBusiness();
+}
+
+async function doRegister() {
+  const email = document.getElementById('reg-email').value.trim();
+  const pw    = document.getElementById('reg-pw').value;
+  if (!email) { showToast('Digite seu e-mail', true); return; }
+  if (pw.length < 6) { showToast('Senha deve ter ao menos 6 caracteres', true); return; }
+  const { data, error } = await db.auth.signUp({ email, password: pw });
+  if (error) { showToast(traduzirErro(error.message), true); return; }
+  currentUser = data.user;
+  showToast('Conta criada! Configure seu negócio.');
+  setState('setup');
+}
+
+async function doLogout() {
+  await db.auth.signOut();
+  currentUser = null; businessId = null; businessData = null; settings = null;
+  setState('login');
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email) { showToast('Digite seu e-mail', true); return; }
+  const { error } = await db.auth.resetPasswordForEmail(email);
+  if (error) { showToast(traduzirErro(error.message), true); return; }
+  showToast('Link enviado! Verifique seu e-mail.');
+  switchLoginTab('login');
+}
+
+// ── CARREGAR NEGÓCIO ─────────────────────────────────────────────
+async function loadBusiness() {
+  const { data, error } = await db
+    .from('businesses')
+    .select('*')
+    .eq('owner_uid', currentUser.id)
+    .single();
+
+  if (error || !data) {
+    // Primeira vez — vai para setup
+    setState('setup');
+    return;
+  }
+
+  businessData = data;
+  businessId   = data.id;
+  settings     = { ...DEFAULT_SETTINGS, ...(data.config || {}) };
+
+  // Verifica assinatura
+  if (data.status !== 'ativo' || new Date(data.data_vencimento) < new Date()) {
+    setState('expired');
+    return;
+  }
+
+  setState('admin');
+  bootAdmin();
+}
+
+// ── SETUP DO NEGÓCIO (primeiro acesso) ───────────────────────────
+function formatSlug(input) {
+  input.value = input.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+  document.getElementById('slug-preview').textContent = input.value || '...';
+}
+
+async function finishSetup() {
+  const shopName   = document.getElementById('setup-shop-name').value.trim();
+  const barberName = document.getElementById('setup-barber-name').value.trim();
+  const waNumber   = document.getElementById('setup-wa').value.replace(/\D/g, '');
+  const slug       = document.getElementById('setup-slug').value.trim();
+  const bizType    = document.getElementById('setup-biz-type').value;
+
+  if (!shopName)   { showToast('Digite o nome do negócio', true); return; }
+  if (!slug || slug.length < 3) { showToast('Slug deve ter ao menos 3 caracteres', true); return; }
+
+  // Verifica se slug já existe
+  const { data: existing } = await db.from('businesses').select('id').eq('slug', slug).single();
+  if (existing) { showToast('Este slug já está em uso. Escolha outro.', true); return; }
+
+  const config = { ...DEFAULT_SETTINGS, shopName, barberName, waNumber, bizType };
+
+  // Cria o negócio no Supabase com assinatura de teste (30 dias)
+  const venc = new Date(); venc.setDate(venc.getDate() + 30);
+  const { data, error } = await db.from('businesses').insert({
+    owner_uid:       currentUser.id,
+    owner_email:     currentUser.email,
+    nome_negocio:    shopName,
+    slug,
+    status:          'ativo',
+    data_vencimento: venc.toISOString(),
+    plano:           'teste',
+    config,
+  }).select().single();
+
+  if (error) { showToast('Erro ao criar negócio: ' + error.message, true); return; }
+
+  businessData = data;
+  businessId   = data.id;
+  settings     = config;
+
+  await log('info', 'Negócio criado', { slug, shopName });
+  showToast('Negócio criado! Bem-vindo ao Agendio 🎉');
+  setState('admin');
+  bootAdmin();
+}
+
+// ── ESTADO ───────────────────────────────────────────────────────
+function setState(state) {
+  document.getElementById('state-loading').classList.remove('active');
+  document.getElementById('state-login').classList.remove('active');
+  document.getElementById('state-expired').classList.remove('active');
+  document.getElementById('state-setup').classList.remove('active');
+  document.getElementById('main-admin').style.display = 'none';
+  if (state === 'loading')  document.getElementById('state-loading').classList.add('active');
+  else if (state === 'login')   document.getElementById('state-login').classList.add('active');
+  else if (state === 'expired') document.getElementById('state-expired').classList.add('active');
+  else if (state === 'setup')   document.getElementById('state-setup').classList.add('active');
+  else if (state === 'admin')   document.getElementById('main-admin').style.display = 'block';
+}
+
+// ── BOOT ADMIN ───────────────────────────────────────────────────
+function bootAdmin() {
+  // Nome no header
+  document.getElementById('admin-shop-name').textContent = settings.shopName || 'Admin';
+  document.documentElement.style.setProperty('--accent', getBizType(settings.bizType).color);
+
+  // Badge de assinatura
+  const venc   = new Date(businessData.data_vencimento);
+  const ativo  = businessData.status === 'ativo' && venc > new Date();
+  const dias   = Math.max(0, Math.ceil((venc - new Date()) / 86400000));
+  document.getElementById('sub-info').innerHTML = ativo
+    ? `<div class="sub-badge ativo">✅ Assinatura ativa — ${dias} dia(s) restante(s)</div>`
+    : `<div class="sub-badge vencido">❌ Assinatura vencida</div>`;
+
+  // Link público
+  const slug = businessData.slug;
+  const pubLink = `${window.location.hostname}/${slug}`;
+  document.getElementById('pub-link-text').textContent = pubLink;
+
+  renderAdminDayTabs();
+  renderLockBox();
+  loadReminderSettings();
+  loadSettingsForm();
+  setInterval(checkNoShows, 15000);
+  setInterval(updateCountdowns, 1000);
+}
+
+function copyPublicLink() {
+  const slug = businessData.slug;
+  navigator.clipboard.writeText(`${window.location.origin}/${slug}`)
+    .then(() => showToast('Link copiado!'))
+    .catch(() => showToast('Não foi possível copiar', true));
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────
+function getBizType(id) { return BUSINESS_TYPES.find(b => b.id === id) || BUSINESS_TYPES[0]; }
+
+function generateSlots(s) {
+  const slots = [];
+  const [sh, sm] = s.startTime.split(':').map(Number);
+  const [eh, em] = s.endTime.split(':').map(Number);
+  const iv = parseInt(s.intervalMin);
+  let cur = sh*60+sm, end = eh*60+em, ls = null, le = null;
+  if (s.lunchBreak !== 'none') {
+    const [a, b] = s.lunchBreak.split('-');
+    const [lsh, lsm] = a.split(':').map(Number); const [leh, lem] = b.split(':').map(Number);
+    ls = lsh*60+lsm; le = leh*60+lem;
+  }
+  while (cur < end) {
+    if (ls !== null && cur >= ls && cur < le) { cur += iv; continue; }
+    slots.push(`${String(Math.floor(cur/60)).padStart(2,'0')}:${String(cur%60).padStart(2,'0')}`);
+    cur += iv;
+  }
+  return slots;
+}
+
+function getWeekDays() {
+  const days = [], now = new Date(); let i = 0;
+  while (days.length < 7 && i < 30) {
+    const d = new Date(now); d.setDate(now.getDate() + i);
+    const dow = d.getDay(), key = d.toISOString().slice(0, 10);
+    if (settings.workDays.includes(dow))
+      days.push({ date: d, key, name: DAYS_PT[dow], label: `${d.getDate()} ${MONTHS_PT[d.getMonth()]}` });
+    i++;
+  }
+  return days;
+}
+
+function slotDateTime(dayKey, time) {
+  const [h, m] = time.split(':').map(Number);
+  const d = new Date(dayKey + 'T00:00:00'); d.setHours(h, m, 0, 0); return d;
+}
+
+function getCountdownInfo(appt) {
+  const cs = appt.countdown_start;
+  if (!cs) return { active: false };
+  const rem = NO_SHOW_TIMEOUT - (Date.now() - cs);
+  if (rem <= 0) return { active: false };
+  return { active: true, label: `${Math.floor(rem/60000)}:${String(Math.floor((rem%60000)/1000)).padStart(2,'0')}` };
+}
+
+// ── SUPABASE: CARREGAR DIA ───────────────────────────────────────
+async function loadDayFromDB(dateKey) {
+  const { data, error } = await db
+    .from('appointments')
+    .select('*')
+    .eq('business_id', businessId)
+    .eq('date', dateKey)
+    .order('time', { ascending: true });
+  if (error) { await log('error', 'Erro ao carregar agendamentos', { dateKey }); return {}; }
+  const result = {};
+  (data || []).forEach(row => { result[row.time] = row; });
+  return result;
+}
+
+// ── TABS ─────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.admin-nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['agenda', 'lock', 'reminder', 'settings'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'agenda') renderAdminDayTabs();
+}
+
+// ── AGENDA ───────────────────────────────────────────────────────
+function renderAdminDayTabs() {
+  const days = getWeekDays();
+  const tabs = document.getElementById('admin-day-tabs');
+  tabs.innerHTML = '';
+  days.forEach((day, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'day-tab' + (i === 0 ? ' active' : '');
+    btn.textContent = `${day.name.slice(0,3)} ${day.date.getDate()}`;
+    btn.onclick = () => {
+      document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      loadAndRenderAdminDay(day);
+    };
+    tabs.appendChild(btn);
+  });
+  if (days.length) loadAndRenderAdminDay(days[0]);
+}
+
+async function loadAndRenderAdminDay(day) {
+  currentAdminDay = day;
+  const container = document.getElementById('admin-appointments');
+  container.innerHTML = '<div style="text-align:center;color:var(--mid);padding:20px;">Carregando...</div>';
+  dayCache[day.key] = await loadDayFromDB(day.key);
+  renderAdminAppointments();
+}
+
+function renderAdminAppointments() {
+  if (!currentAdminDay) return;
+  const container = document.getElementById('admin-appointments');
+  const allSlots  = generateSlots(settings);
+  const dayData   = dayCache[currentAdminDay.key] || {};
+  const now       = Date.now();
+  const todayKey  = new Date().toISOString().slice(0, 10);
+
+  // Filtra só os slots ocupados (não cancelados e não liberados)
+  const booked = allSlots.filter(t => {
+    const a = dayData[t];
+    return a && !a.cancelled && !a.freed;
+  });
+
+  if (!booked.length) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Nenhum agendamento</p></div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  booked.forEach(time => {
+    const appt = dayData[time];
+    const isArrived   = appt.arrived;
+    const isCancelled = appt.cancelled;
+    const cdInfo      = getCountdownInfo(appt);
+    const biz         = getBizType(settings.bizType);
+
+    const card = document.createElement('div');
+    card.className = 'appointment-card' + (isArrived ? ' arrived' : isCancelled ? ' cancelled-card' : '');
+    card.id = `card-${currentAdminDay.key}-${time.replace(':', '')}`;
+
+    // Mensagem WA para lembrete manual
+    const waMsg = encodeURIComponent(
+      `Olá ${appt.name}! 👋 Lembrando do seu agendamento de *${biz.service}* em *${settings.shopName}* hoje às *${time}*. Aguardamos você! ✂️`
+    );
+    const waUrl = settings.waNumber
+      ? `https://wa.me/55${settings.waNumber}?text=${waMsg}`
+      : `https://wa.me/55${appt.phone?.replace(/\D/g,'')}?text=${waMsg}`;
+
+    card.innerHTML = `
+      <div class="time-badge">${time}</div>
+      <div class="client-name">${appt.name}</div>
+      <div class="client-phone">${appt.phone}</div>
+      <div class="card-bottom">
+        ${isArrived
+          ? `<span class="arrived-badge">✅ Chegou</span>`
+          : cdInfo.active
+            ? `<span class="countdown-badge" id="cd-${currentAdminDay.key}-${time.replace(':','')}">⏱ ${cdInfo.label}</span>`
+            : `<button class="arrived-btn" onclick="markArrived('${currentAdminDay.key}','${time}')">✓ Chegou</button>`
+        }
+        <div style="display:flex;gap:6px;align-items:center;">
+          <a href="${waUrl}" target="_blank" class="wa-btn-sm">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Lembrete
+          </a>
+          <button class="btn-sm" style="background:var(--red);color:#fff;" onclick="adminCancel('${currentAdminDay.key}','${time}')">Cancelar</button>
+        </div>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+async function markArrived(dateKey, time) {
+  await db.from('appointments').update({ arrived: true }).eq('business_id', businessId).eq('date', dateKey).eq('time', time);
+  if (dayCache[dateKey]?.[time]) dayCache[dateKey][time].arrived = true;
+  renderAdminAppointments();
+  showToast('Cliente marcado como chegou ✅');
+}
+
+async function adminCancel(dateKey, time) {
+  if (!confirm(`Cancelar o agendamento das ${time}?`)) return;
+  const now = Date.now();
+  await db.from('appointments').update({ cancelled: true, cancelled_at: now }).eq('business_id', businessId).eq('date', dateKey).eq('time', time);
+  if (dayCache[dateKey]?.[time]) { dayCache[dateKey][time].cancelled = true; dayCache[dateKey][time].cancelled_at = now; }
+  renderAdminAppointments();
+  showToast('Agendamento cancelado');
+  await log('info', 'Admin cancelou agendamento', { date: dateKey, time });
+}
+
+// ── NO-SHOW ───────────────────────────────────────────────────────
+async function checkNoShows() {
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const dayData  = { ...(dayCache[todayKey] || {}) };
+  const now      = Date.now();
+  let changed    = false;
+  for (const [time, appt] of Object.entries(dayData)) {
+    if (!appt || appt.arrived || appt.freed || appt.cancelled) continue;
+    const slotMs = slotDateTime(todayKey, time).getTime();
+    if (now >= slotMs && !appt.countdown_start) {
+      await db.from('appointments').update({ countdown_start: slotMs }).eq('id', appt.id);
+      dayCache[todayKey][time] = { ...appt, countdown_start: slotMs };
+      changed = true;
+    }
+    if (appt.countdown_start && (now - appt.countdown_start) >= NO_SHOW_TIMEOUT) {
+      await db.from('appointments').update({ freed: true, freed_at: now }).eq('id', appt.id);
+      dayCache[todayKey][time] = { ...appt, freed: true, freed_at: now };
+      changed = true;
+      showToast(`⚡ ${time} liberado — cliente não chegou`);
+    }
+  }
+  if (changed && currentAdminDay?.key === todayKey) renderAdminAppointments();
+}
+
+function updateCountdowns() {
+  const todayKey = new Date().toISOString().slice(0, 10);
+  if (!currentAdminDay || currentAdminDay.key !== todayKey) return;
+  Object.entries(dayCache[todayKey] || {}).forEach(([time, appt]) => {
+    if (!appt || appt.arrived || appt.freed || appt.cancelled || !appt.countdown_start) return;
+    const el = document.getElementById(`cd-${todayKey}-${time.replace(':', '')}`);
+    if (!el) return;
+    const info = getCountdownInfo(appt);
+    if (info.active) el.textContent = `⏱ ${info.label}`;
+  });
+}
+
+// ── BLOQUEIO DE EMERGÊNCIA ────────────────────────────────────────
+function renderLockBox() {
+  const locked = settings.locked;
+  document.getElementById('lock-box-container').innerHTML = `
+    <div class="lock-box ${locked ? '' : 'unlocked'}">
+      <h3>${locked ? '🔒 Agenda Bloqueada' : '✅ Agenda Aberta'}</h3>
+      <div class="lock-status">
+        <div class="lock-dot${locked ? ' red' : ''}"></div>
+        <span>${locked ? 'Novos agendamentos bloqueados' : 'Aceitando agendamentos normalmente'}</span>
+      </div>
+      <p>${locked
+        ? `Bloqueada ${settings.lockedSince ? 'às ' + new Date(settings.lockedSince).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : ''}`
+        : 'Clientes podem agendar normalmente agora.'}</p>
+      <button class="btn ${locked ? 'btn-green' : 'btn-danger'}" onclick="toggleLock()">
+        ${locked ? '🔓 Desbloquear Agenda' : '🔒 Bloquear Agenda (emergência)'}
+      </button>
+    </div>`;
+}
+
+async function toggleLock() {
+  settings.locked = !settings.locked;
+  settings.lockedSince = settings.locked ? Date.now() : null;
+  await saveSettingsToDB();
+  renderLockBox();
+  showToast(settings.locked ? '🔒 Agenda bloqueada' : '🔓 Agenda liberada');
+  await log('info', settings.locked ? 'Admin bloqueou agenda' : 'Admin desbloqueou agenda');
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────
+function loadSettingsForm() {
+  // Popula select de tipos de negócio
+  const sel = document.getElementById('biz-type-select');
+  sel.innerHTML = '';
+  BUSINESS_TYPES.forEach(bt => {
+    const o = document.createElement('option');
+    o.value = bt.id; o.textContent = `${bt.icon} ${bt.label}`;
+    if (bt.id === settings.bizType) o.selected = true;
+    sel.appendChild(o);
+  });
+  document.getElementById('shop-name').value    = settings.shopName || '';
+  document.getElementById('barber-name').value  = settings.barberName || '';
+  document.getElementById('shop-address').value = settings.shopAddress || '';
+  // Dias
+  const wdg = document.getElementById('work-days-grid'); wdg.innerHTML = '';
+  [1,2,3,4,5,6,0].forEach(dow => {
+    const d = document.createElement('div');
+    d.className = 'day-toggle' + (settings.workDays.includes(dow) ? ' on' : '');
+    d.textContent = DAYS_PT[dow].slice(0, 3); d.dataset.dow = dow;
+    d.onclick = () => d.classList.toggle('on');
+    wdg.appendChild(d);
+  });
+  document.getElementById('work-start').value    = settings.startTime;
+  document.getElementById('work-end').value      = settings.endTime;
+  document.getElementById('slot-interval').value = settings.intervalMin;
+  document.getElementById('lunch-break').value   = settings.lunchBreak;
+  renderOffDates(settings.offDates || []);
+}
+
+function renderOffDates(offDates) {
+  const list = document.getElementById('off-dates-list'); list.innerHTML = '';
+  if (!offDates.length) { list.innerHTML = `<p style="font-size:12px;color:var(--mid);margin-bottom:7px;">Nenhuma folga cadastrada</p>`; return; }
+  [...offDates].sort().forEach(d => {
+    const [y, m, day] = d.split('-');
+    const item = document.createElement('div'); item.className = 'off-date-item';
+    item.innerHTML = `<span>🚫 ${day}/${m}/${y}</span><button class="remove-btn" onclick="removeOffDate('${d}')">×</button>`;
+    list.appendChild(item);
+  });
+}
+
+function addOffDate() {
+  const val = document.getElementById('new-off-date').value;
+  if (!val) { showToast('Selecione uma data', true); return; }
+  if (!settings.offDates) settings.offDates = [];
+  if (settings.offDates.includes(val)) { showToast('Data já cadastrada', true); return; }
+  settings.offDates.push(val);
+  renderOffDates(settings.offDates);
+  document.getElementById('new-off-date').value = '';
+  showToast('Folga adicionada!');
+}
+
+function removeOffDate(d) {
+  settings.offDates = settings.offDates.filter(x => x !== d);
+  renderOffDates(settings.offDates);
+  showToast('Removido');
+}
+
+async function saveSettings() {
+  settings.bizType     = document.getElementById('biz-type-select').value;
+  settings.shopName    = document.getElementById('shop-name').value.trim() || 'Meu Negócio';
+  settings.barberName  = document.getElementById('barber-name').value.trim() || 'Profissional';
+  settings.shopAddress = document.getElementById('shop-address').value.trim();
+  const toggles        = document.querySelectorAll('.day-toggle');
+  settings.workDays    = [];
+  toggles.forEach(t => { if (t.classList.contains('on')) settings.workDays.push(parseInt(t.dataset.dow)); });
+  settings.startTime   = document.getElementById('work-start').value;
+  settings.endTime     = document.getElementById('work-end').value;
+  settings.intervalMin = parseInt(document.getElementById('slot-interval').value);
+  settings.lunchBreak  = document.getElementById('lunch-break').value;
+  if (settings.startTime >= settings.endTime) { showToast('Horário início deve ser antes do fim', true); return; }
+  if (!settings.workDays.length) { showToast('Selecione ao menos um dia', true); return; }
+  await saveSettingsToDB();
+  document.getElementById('admin-shop-name').textContent = settings.shopName;
+  document.documentElement.style.setProperty('--accent', getBizType(settings.bizType).color);
+  showToast('✅ Configurações salvas!');
+}
+
+// ── WHATSAPP/REMINDER SETTINGS ────────────────────────────────────
+function loadReminderSettings() {
+  document.getElementById('rem-1h').checked     = settings.rem1h !== false;
+  document.getElementById('rem-morning').checked = !!settings.remMorning;
+  document.getElementById('wa-number').value    = settings.waNumber || '';
+}
+
+async function saveReminderSettings() {
+  settings.rem1h      = document.getElementById('rem-1h').checked;
+  settings.remMorning = document.getElementById('rem-morning').checked;
+  settings.waNumber   = document.getElementById('wa-number').value.replace(/\D/g, '');
+  await saveSettingsToDB();
+  showToast('✅ Configurações de WA salvas!');
+}
+
+// ── SALVAR CONFIG NO SUPABASE ─────────────────────────────────────
+async function saveSettingsToDB() {
+  const { error } = await db
+    .from('businesses')
+    .update({
+      config:       settings,
+      nome_negocio: settings.shopName,
+    })
+    .eq('id', businessId);
+  if (error) {
+    await log('error', 'Erro ao salvar configurações', { error: error.message });
+    showToast('Erro ao salvar. Tente novamente.', true);
+  }
+}
+
+// ── FORÇA DE SENHA ────────────────────────────────────────────────
+function checkPwStrength(inputId, barId) {
+  const pw  = document.getElementById(inputId).value;
+  const bar = document.getElementById(barId);
+  let score = 0;
+  if (pw.length >= 6)  score++;
+  if (pw.length >= 10) score++;
+  if (/[0-9]/.test(pw))              score++;
+  if (/[A-Z]/.test(pw) || /[!@#$%]/.test(pw)) score++;
+  const colors = ['#b03030','#c87010','#d4a843','#2d7a4f'];
+  const widths = ['25%','50%','75%','100%'];
+  bar.style.width      = score ? widths[score-1] : '0';
+  bar.style.background = score ? colors[score-1] : '#3a3a3a';
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────
+function showToast(msg, warn = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = warn ? 'warn' : ''; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3400);
+}
+
+// ── START ─────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
