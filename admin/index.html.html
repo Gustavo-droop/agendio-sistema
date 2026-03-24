@@ -575,6 +575,11 @@ async function finishSetup() {
   if (!shopName)   { showToast('Digite o nome do negócio', true); return; }
   if (!slug || slug.length < 3) { showToast('Slug deve ter ao menos 3 caracteres', true); return; }
 
+  // Garante que a sessão está ativa antes de salvar
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) { showToast('Sessão expirada. Faça login novamente.', true); setState('login'); return; }
+  currentUser = session.user;
+
   // Verifica se slug já existe (maybeSingle não gera erro quando não encontra)
   const { data: existing } = await db.from('businesses').select('id').eq('slug', slug).maybeSingle();
   if (existing) { showToast('Este slug já está em uso. Escolha outro.', true); return; }
